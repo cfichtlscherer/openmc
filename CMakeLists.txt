@@ -251,11 +251,15 @@ endif()
 # {fmt} library
 #===============================================================================
 
-find_package_write_status(fmt)
-if (NOT fmt_FOUND)
-  set(FMT_INSTALL ON CACHE BOOL "Generate the install target.")
-  add_subdirectory(vendor/fmt)
-endif()
+find_package(fmt REQUIRED)
+include_directories(${fmt_INCLUDE_DIRS})
+target_link_libraries(fmt::fmt)
+
+#find_package_write_status(fmt)
+#if (NOT fmt_FOUND)
+#  set(FMT_INSTALL ON CACHE BOOL "Generate the install target.")
+#  add_subdirectory(vendor/fmt)
+#endif()
 
 #===============================================================================
 # xtensor header-only library

@@ -17,6 +17,7 @@
 #include "openmc/message_passing.h"
 #include "openmc/mgxs_interface.h"
 #include "openmc/nuclide.h"
+#include "openmc/particle_data.h"
 #include "openmc/photon.h"
 #include "openmc/physics.h"
 #include "openmc/physics_mg.h"
@@ -285,6 +286,10 @@ void Particle::event_collide()
       score_analog_tally_mg(*this);
     }
   }
+
+  // Score the energy the photon delivered in this collision to the cell
+  // for the pulse-height value
+  if (type() == ParticleType::photon){energy_delivered_in_cell();}
 
   // Reset banked weight during collision
   n_bank() = 0;
