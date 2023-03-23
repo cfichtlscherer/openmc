@@ -312,7 +312,7 @@ private:
 
   vector<NuBank> nu_bank_; // bank of most recently fissioned particles
 
-  // Pulse-height storage
+  // pulse-height storage
   std::vector<double> pht_storage_;
 
   // Global tally accumulators

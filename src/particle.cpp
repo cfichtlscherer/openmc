@@ -64,11 +64,15 @@ double Particle::speed() const
 void Particle::create_secondary(
   double wgt, Direction u, double E, ParticleType type)
 {
+
   // If energy is below cutoff for this particle, don't create secondary
   // particle
   if (E < settings::energy_cutoff[static_cast<int>(type)]) {
     return;
   }
+
+  // Remove energy of secondary created from pulse height value
+  if (settings::pulse_height && type() == ParticleType::photon){remove_energy_of_secondary();}
 
   secondary_bank().emplace_back();
 
@@ -287,9 +291,8 @@ void Particle::event_collide()
     }
   }
 
-  // Score the energy the photon delivered in this collision to the cell
-  // for the pulse-height value
-  if (type() == ParticleType::photon){energy_delivered_in_cell();}
+  // Score pulse-height value contribution during the event
+  if (settings::pulse_height && type() == ParticleType::photon && E_last() > settings::energy_cutoff[1]){energy_delivered_in_cell();}
 
   // Reset banked weight during collision
   n_bank() = 0;
@@ -394,6 +397,27 @@ void Particle::event_death()
     int64_t offset = id() - 1 - simulation::work_index[mpi::rank];
     simulation::progeny_per_particle[offset] = n_progeny();
   }
+
+  // Tally the pulse-height after the end of the entire particle history
+  if (settings::pulse_height && type() == ParticleType::photon){score_pulse_height_tally(*this);}
+}
+
+void Particle::energy_delivered_in_cell()
+{
+  // Adds the energy particles lose in a collision to the pulse-height
+  pht_storage()[coord(n_coord() - 1).cell] += E_last() - E();
+  
+  // If the energy of the particle is below the cutoff, it will not be sampled
+  // so its energy is added to the pulse-height in the cell
+  if (E() < settings::energy_cutoff[static_cast<int>(type)]){
+  pht_storage()[coord(n_coord() - 1).cell] += E();
+  }
+}
+
+void Particle::remove_energy_of_secondary()
+{
+  // Removes the energy of secondary produced particles from the pulse-height
+  pht_storage()[coord(n_coord() - 1).cell] -= E(); 
 }
 
 void Particle::cross_surface()

@@ -100,7 +100,7 @@ void score_surface_tally(Particle& p, const vector<int>& tallies);
 //! Score the pulse-height tally
 //
 //! \param p The particle being tracked
-void score_pht_tally(Particle& p);
+void score_pulse_height_tally(Particle& p);
 
 } // namespace openmc
 

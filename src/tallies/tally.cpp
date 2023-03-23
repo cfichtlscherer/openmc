@@ -171,6 +171,13 @@ Tally::Tally(pugi::xml_node node)
   }
 
   // Check if tally is compatible with particle type
+  if (!settings::photon_transport) {
+    for (int score : scores_) {
+      switch (score) {
+      case SCORE_PULSE_HEIGHT:
+        fatal_error("Pulse-height tally must be used with photon "
+                      "transport on");
+          break;
   if (settings::photon_transport) {
     if (particle_filter_index == C_NONE) {
       for (int score : scores_) {
@@ -191,6 +198,7 @@ Tally::Tally(pugi::xml_node node)
         case SCORE_DELAYED_NU_FISSION:
         case SCORE_PROMPT_NU_FISSION:
         case SCORE_DECAY_RATE:
+        case SCORE_PULSE_HEIGHT:
           warning("Particle filter is not used with photon transport"
                   " on and " +
                   reaction_name(score) + " score.");
@@ -498,7 +506,16 @@ void Tally::set_scores(const vector<std::string>& scores)
         estimator_ = TallyEstimator::COLLISION;
       break;
     }
-
+    case PULSE_HEIGHT:
+      // pulse-height can only be determined with a cell filter and an energy filter
+    for (auto i_filt : filters_) {
+      const auto* filt {model::tally_filters[i_filt].get()};
+    if !(dynamic_cast<const CellFilter*>(filt) || dynamic_cast<const EnergyFilter*>(filt)) {
+        fatal_error("The pulse-height can only be tallied for cell and energy filters");
+      }
+      settings::pulse_height = true;
+      break;
+    }
     scores_.push_back(score);
   }
 

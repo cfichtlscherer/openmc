@@ -63,9 +63,8 @@ public:
   void event_revive_from_secondary();
   void event_death();
 
-  //! Pulse-height events
+  //! pulse-height recording
   void energy_delivered_in_cell();
-  void killed_particle_energy_delivered();
   void remove_energy_of_secondary();
 
   //! Cross a surface and handle boundary conditions
