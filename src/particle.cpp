@@ -67,6 +67,7 @@ void Particle::create_secondary(
   // If energy is below cutoff for this particle, don't create secondary
   // particle
   if (E < settings::energy_cutoff[static_cast<int>(type)]) {
+    if (settings::pulse_height && type() == ParticleType::photon){pht_killed_particles();}
     return;
   }
   
