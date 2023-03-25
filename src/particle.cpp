@@ -399,7 +399,8 @@ void Particle::event_death()
   }
 
   // Tally the pulse-height after the end of the entire particle history
-  if (settings::pulse_height){score_pulse_height_tally(*this, model::active_surface_tallies);}
+  std::cout << "Pulse-height tally: " << pht_storage()[coord(n_coord() - 1).cell] << std::endl;
+  if (settings::pulse_height){score_pulse_height_tally(*this, model::active_pulse_height_tallies);}
 }
 
 void Particle::energy_delivered_in_cell()

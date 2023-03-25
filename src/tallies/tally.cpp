@@ -202,7 +202,6 @@ Tally::Tally(pugi::xml_node node)
         case SCORE_DELAYED_NU_FISSION:
         case SCORE_PROMPT_NU_FISSION:
         case SCORE_DECAY_RATE:
-        case SCORE_PULSE_HEIGHT:
           warning("Particle filter is not used with photon transport"
                   " on and " +
                   reaction_name(score) + " score.");
@@ -427,8 +426,12 @@ void Tally::set_scores(const vector<std::string>& scores)
   bool cellfrom_present = false;
   bool surface_present = false;
   bool meshsurface_present = false;
+  bool non_cell_energy_present = false;
   for (auto i_filt : filters_) {
     const auto* filt {model::tally_filters[i_filt].get()};
+    if (!(dynamic_cast<const CellFilter*>(filt) || dynamic_cast<const EnergyFilter*>(filt))){
+      non_cell_energy_present = true;
+    }
     if (dynamic_cast<const LegendreFilter*>(filt)) {
       legendre_present = true;
     } else if (dynamic_cast<const CellFromFilter*>(filt)) {
@@ -511,15 +514,12 @@ void Tally::set_scores(const vector<std::string>& scores)
       break;
     
     case SCORE_PULSE_HEIGHT:
-      // pulse-height can only be determined with a cell filter and an energy filter
-    for (auto i_filt : filters_) {
-      const auto* filt {model::tally_filters[i_filt].get()};
-    if (!(dynamic_cast<const CellFilter*>(filt) || dynamic_cast<const EnergyFilter*>(filt))) {
+      if (non_cell_energy_present) {
         fatal_error("The pulse-height can only be tallied for cell and energy filters");
       }
+      type_ = TallyType::PULSE_HEIGHT;
       settings::pulse_height = true;
       break;
-    }
     }
     scores_.push_back(score);
   }
@@ -930,9 +930,12 @@ void setup_active_tallies()
 
       case TallyType::SURFACE:
         model::active_surface_tallies.push_back(i);
+        break;
 
       case TallyType::PULSE_HEIGHT:
+        std::cout << "pulse height tally - tally type" << std::endl;
         model::active_pulse_height_tallies.push_back(i);
+        break;
       }
     }
   }
@@ -1076,6 +1079,8 @@ extern "C" int openmc_tally_set_type(int32_t index, const char* type)
     model::tallies[index]->type_ = TallyType::MESH_SURFACE;
   } else if (strcmp(type, "surface") == 0) {
     model::tallies[index]->type_ = TallyType::SURFACE;
+      } else if (strcmp(type, "pulse-height") == 0) {
+    model::tallies[index]->type_ = TallyType::PULSE_HEIGHT;
   } else {
     set_errmsg(fmt::format("Unknown tally type: {}", type));
     return OPENMC_E_INVALID_ARGUMENT;

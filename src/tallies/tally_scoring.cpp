@@ -2468,8 +2468,6 @@ void score_surface_tally(Particle& p, const vector<int>& tallies)
     match.bins_present_ = false;
 }
 
-////////////////////////////////////////////////////
-////////////////////////////////////////////////////
 void score_pulse_height_tally(Particle& p,const vector<int>& tallies){
   for (auto i_tally : tallies) {
     auto& tally {*model::tallies[i_tally]};
@@ -2481,34 +2479,22 @@ void score_pulse_height_tally(Particle& p,const vector<int>& tallies){
     auto end = FilterBinIter(tally, true, &p.filter_matches());
     if (filter_iter == end)
       continue;
-
     // Loop over filter bins.
     for (; filter_iter != end; ++filter_iter) {
       auto filter_index = filter_iter.index_;
       auto filter_weight = filter_iter.weight_;
 
       // if filter is cell filter we store the index of the cell until its updated.
-      //double score = p.pht_storage()[cell_index];
-
-      // add the score to the result += 1
-  
-      // Loop over scores.
-      // There is only one score type for current tallies so there is no need
-      // for a further scoring function.
+      int cell_index = 0;
+      double score = p.pht_storage()[cell_index];
       
-      //for (auto score_index = 0; score_index < tally.scores_.size();
-      //     ++score_index) {
-      //#pragma omp atomic
-      //  tally.results_(filter_index, score_index, TallyResult::VALUE) += score;
-      //}
+      // Loop over scores.
+      for (auto score_index = 0; score_index < tally.scores_.size();
+           ++score_index) {
+      #pragma omp atomic
+        tally.results_(filter_index, score_index, TallyResult::VALUE) += score;
+      }
     }
-
-  //for (auto i_filt : filters_) {
-  //    const auto* filt {model::tally_filters[i_filt].get()};
-  //  if !(dynamic_cast<const CellFilter*>(filt) || dynamic_cast<const EnergyFilter*>(filt)) {
-  //      fatal_error("The pulse-height can only be tallied for cell and energy filters");
-
-
   }
 
   // Reset all the filter matches for the next tally event.
