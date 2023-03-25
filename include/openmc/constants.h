@@ -278,7 +278,7 @@ enum class MgxsType {
 
 enum class TallyResult { VALUE, SUM, SUM_SQ };
 
-enum class TallyType { VOLUME, MESH_SURFACE, SURFACE };
+enum class TallyType { VOLUME, MESH_SURFACE, SURFACE, PULSE_HEIGHT};
 
 enum class TallyEstimator { ANALOG, TRACKLENGTH, COLLISION };
 

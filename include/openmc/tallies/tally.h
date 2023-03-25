@@ -155,6 +155,7 @@ extern vector<int> active_tracklength_tallies;
 extern vector<int> active_collision_tallies;
 extern vector<int> active_meshsurf_tallies;
 extern vector<int> active_surface_tallies;
+extern vector<int> active_pulse_height_tallies;
 } // namespace model
 
 namespace simulation {

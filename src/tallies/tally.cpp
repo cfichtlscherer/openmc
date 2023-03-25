@@ -55,6 +55,7 @@ vector<int> active_tracklength_tallies;
 vector<int> active_collision_tallies;
 vector<int> active_meshsurf_tallies;
 vector<int> active_surface_tallies;
+vector<int> active_pulse_height_tallies;
 } // namespace model
 
 namespace simulation {
@@ -178,6 +179,9 @@ Tally::Tally(pugi::xml_node node)
         fatal_error("Pulse-height tally must be used with photon "
                       "transport on");
           break;
+      }
+    }
+  }
   if (settings::photon_transport) {
     if (particle_filter_index == C_NONE) {
       for (int score : scores_) {
@@ -505,16 +509,17 @@ void Tally::set_scores(const vector<std::string>& scores)
       if (settings::photon_transport)
         estimator_ = TallyEstimator::COLLISION;
       break;
-    }
-    case PULSE_HEIGHT:
+    
+    case SCORE_PULSE_HEIGHT:
       // pulse-height can only be determined with a cell filter and an energy filter
     for (auto i_filt : filters_) {
       const auto* filt {model::tally_filters[i_filt].get()};
-    if !(dynamic_cast<const CellFilter*>(filt) || dynamic_cast<const EnergyFilter*>(filt)) {
+    if (!(dynamic_cast<const CellFilter*>(filt) || dynamic_cast<const EnergyFilter*>(filt))) {
         fatal_error("The pulse-height can only be tallied for cell and energy filters");
       }
       settings::pulse_height = true;
       break;
+    }
     }
     scores_.push_back(score);
   }
@@ -897,6 +902,7 @@ void setup_active_tallies()
   model::active_collision_tallies.clear();
   model::active_meshsurf_tallies.clear();
   model::active_surface_tallies.clear();
+  model::active_pulse_height_tallies.clear();
 
   for (auto i = 0; i < model::tallies.size(); ++i) {
     const auto& tally {*model::tallies[i]};
@@ -924,6 +930,9 @@ void setup_active_tallies()
 
       case TallyType::SURFACE:
         model::active_surface_tallies.push_back(i);
+
+      case TallyType::PULSE_HEIGHT:
+        model::active_pulse_height_tallies.push_back(i);
       }
     }
   }
@@ -945,6 +954,7 @@ void free_memory_tally()
   model::active_collision_tallies.clear();
   model::active_meshsurf_tallies.clear();
   model::active_surface_tallies.clear();
+  model::active_pulse_height_tallies.clear();
 
   model::tally_map.clear();
 }

@@ -72,7 +72,7 @@ void Particle::create_secondary(
   }
 
   // Remove energy of secondary created from pulse height value
-  if (settings::pulse_height && type() == ParticleType::photon){remove_energy_of_secondary();}
+  if (settings::pulse_height && this->type() == ParticleType::photon){remove_energy_of_secondary();}
 
   secondary_bank().emplace_back();
 
@@ -399,7 +399,7 @@ void Particle::event_death()
   }
 
   // Tally the pulse-height after the end of the entire particle history
-  if (settings::pulse_height && type() == ParticleType::photon){score_pulse_height_tally(*this);}
+  if (settings::pulse_height){score_pulse_height_tally(*this, model::active_surface_tallies);}
 }
 
 void Particle::energy_delivered_in_cell()
@@ -409,7 +409,7 @@ void Particle::energy_delivered_in_cell()
   
   // If the energy of the particle is below the cutoff, it will not be sampled
   // so its energy is added to the pulse-height in the cell
-  if (E() < settings::energy_cutoff[static_cast<int>(type)]){
+  if (E() < settings::energy_cutoff[1]){
   pht_storage()[coord(n_coord() - 1).cell] += E();
   }
 }
