@@ -403,7 +403,7 @@ void Particle::pht_collision_energy()
 {
   // Adds the energy particles lose in a collision to the pulse-height at the cell index
   pht_storage()[coord(n_coord() - 1).cell] += E_last() - E();
-  if (E() < settings::energy_cutoff[1]){pht_storage()[coord(n_coord() - 1).cell] += E();}
+  if ()
 }
 
 void Particle::pht_killed_particles()
@@ -781,4 +781,4 @@ ParticleType str_to_particle_type(std::string str)
   }
 }
 
-} // namespace openm
+} // namespace openmc

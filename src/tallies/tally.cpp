@@ -933,7 +933,7 @@ void setup_active_tallies()
         break;
 
       case TallyType::PULSE_HEIGHT:
-        std::cout << "pulse height tally - tally type" << std::endl;
+        
         model::active_pulse_height_tallies.push_back(i);
         break;
       }

@@ -64,8 +64,9 @@ public:
   void event_death();
 
   //! pulse-height recording
-  void energy_delivered_in_cell();
-  void remove_energy_of_secondary();
+  void pht_collision_energy();
+  void pht_killed_particles();
+  void pht_secondary_particles();
 
   //! Cross a surface and handle boundary conditions
   void cross_surface();

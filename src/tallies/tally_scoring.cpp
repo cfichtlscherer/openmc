@@ -2468,9 +2468,27 @@ void score_surface_tally(Particle& p, const vector<int>& tallies)
     match.bins_present_ = false;
 }
 
-void score_pulse_height_tally(Particle& p,const vector<int>& tallies){
+void score_pulse_height_tally(Particle& p, const vector<int>& tallies){
   for (auto i_tally : tallies) {
     auto& tally {*model::tallies[i_tally]};
+    
+    for (auto filter_idx : tally.filters()) {
+    };
+    //  std::cout << "filter_idx = " << filter_idx << std::endl;
+    //  // print the type of the filter
+    //  
+//
+//
+    //  auto& filter = model::tally_filters[filter_idx];
+    //  std::cout << filter << std::endl;
+    ////  std::cout << filter_idx << std::endl;
+    //};
+    //for (auto filt : tally.filters()) {
+    //  std::cout << "filt->type() = " << filt.type << std::endl;
+    //  //if (dynamic_cast<const CellFilter*>(filt)){
+    //  //  std::cout << "CellFilter" << std::endl;
+    //  //  };
+    //};
 
     // Initialize an iterator over valid filter bin combinations.  If there are
     // no valid combinations, use a continue statement to ensure we skip the
@@ -2481,21 +2499,18 @@ void score_pulse_height_tally(Particle& p,const vector<int>& tallies){
       continue;
     // Loop over filter bins.
     for (; filter_iter != end; ++filter_iter) {
+      std::cout << "filter_iter.index_ = " << filter_iter.index_ << std::endl;
       auto filter_index = filter_iter.index_;
       auto filter_weight = filter_iter.weight_;
 
       // if filter is cell filter we store the index of the cell until its updated.
       int cell_index = 0;
       double score = p.pht_storage()[cell_index];
-      
-      // Loop over scores.
-      for (auto score_index = 0; score_index < tally.scores_.size();
-           ++score_index) {
+
       #pragma omp atomic
-        tally.results_(filter_index, score_index, TallyResult::VALUE) += score;
+        tally.results_(filter_index+1, cell_index, TallyResult::VALUE) += 1;
       }
     }
-  }
 
   // Reset all the filter matches for the next tally event.
   for (auto& match : p.filter_matches())
