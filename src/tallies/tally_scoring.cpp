@@ -17,6 +17,7 @@
 #include "openmc/tallies/filter.h"
 #include "openmc/tallies/filter_delayedgroup.h"
 #include "openmc/tallies/filter_energy.h"
+#include "openmc/tallies/filter_cell.h"
 
 #include <string>
 
@@ -2469,49 +2470,49 @@ void score_surface_tally(Particle& p, const vector<int>& tallies)
 }
 
 void score_pulse_height_tally(Particle& p, const vector<int>& tallies){
-  for (auto i_tally : tallies) {
-    auto& tally {*model::tallies[i_tally]};
-    
-    for (auto filter_idx : tally.filters()) {
-    };
-    //  std::cout << "filter_idx = " << filter_idx << std::endl;
-    //  // print the type of the filter
-    //  
-//
-//
-    //  auto& filter = model::tally_filters[filter_idx];
-    //  std::cout << filter << std::endl;
-    ////  std::cout << filter_idx << std::endl;
-    //};
-    //for (auto filt : tally.filters()) {
-    //  std::cout << "filt->type() = " << filt.type << std::endl;
-    //  //if (dynamic_cast<const CellFilter*>(filt)){
-    //  //  std::cout << "CellFilter" << std::endl;
-    //  //  };
-    //};
+  
+  // print all entries of pht_storage
+  for (int i = 0; i < p.pht_storage().size(); i++){
+    std::cout << "pht_storage[" << i << "] = " << p.pht_storage()[i] << " ";
+  }
+   std::cout << std::endl;
 
-    // Initialize an iterator over valid filter bin combinations.  If there are
-    // no valid combinations, use a continue statement to ensure we skip the
-    // assume_separate break below.
+  for (auto i_tally : tallies) {
+    // define the tally in the loop
+    auto& tally {*model::tallies[i_tally]};
+    // Get the index of the cell filter 
+    auto i_cell_filt = tally.filters()[tally.cell_filter_];
+    //std::cout << "index of the cell filter = " << i_cell_filt << std::endl;
+    // Get the number of cells in the cell filter
+    //std::cout << "number of cells in the cell filter = " << model::tally_filters[i_cell_filt]->n_bins() << std::endl;
+    // Get the index of the cells in the cell filter
+     for (auto filter_idx : tally.filters()) {
+    
     auto filter_iter = FilterBinIter(tally, p);
     auto end = FilterBinIter(tally, true, &p.filter_matches());
     if (filter_iter == end)
       continue;
+    
     // Loop over filter bins.
     for (; filter_iter != end; ++filter_iter) {
       std::cout << "filter_iter.index_ = " << filter_iter.index_ << std::endl;
       auto filter_index = filter_iter.index_;
       auto filter_weight = filter_iter.weight_;
 
-      // if filter is cell filter we store the index of the cell until its updated.
+      // Loop over scores.
+      // There is only one score type for current tallies so there is no need
+      // for a further scoring function.
       int cell_index = 0;
       double score = p.pht_storage()[cell_index];
-
-      #pragma omp atomic
+      for (auto score_index = 0; score_index < tally.scores_.size();
+           ++score_index) {
+        #pragma omp atomic
         tally.results_(filter_index+1, cell_index, TallyResult::VALUE) += 1;
       }
-    }
 
+      }
+    }
+    }
   // Reset all the filter matches for the next tally event.
   for (auto& match : p.filter_matches())
     match.bins_present_ = false;

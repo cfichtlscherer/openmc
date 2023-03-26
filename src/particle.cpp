@@ -67,7 +67,7 @@ void Particle::create_secondary(
   // If energy is below cutoff for this particle, don't create secondary
   // particle
   if (E < settings::energy_cutoff[static_cast<int>(type)]) {
-    if (settings::pulse_height && type() == ParticleType::photon){pht_killed_particles();}
+    //if (!model::active_pulse_height_tallies.empty() && this->type() == ParticleType::photon){pht_killed_particles();}
     return;
   }
   
@@ -289,7 +289,7 @@ void Particle::event_collide()
     }
   }
 
-  if (settings::pulse_height && type() == ParticleType::photon){pht_collision_energy();}
+  if (!model::active_pulse_height_tallies.empty() && type() == ParticleType::photon){pht_collision_energy();}
 
   // Reset banked weight during collision
   n_bank() = 0;
@@ -355,7 +355,7 @@ void Particle::event_revive_from_secondary()
     secondary_bank().pop_back();
     n_event() = 0;
 
-    if (settings::pulse_height && this->type() == ParticleType::photon){pht_secondary_particles();}
+    if (!model::active_pulse_height_tallies.empty() && this->type() == ParticleType::photon){pht_secondary_particles();}
     
     // Enter new particle in particle track file
     if (write_track())
@@ -396,8 +396,8 @@ void Particle::event_death()
     int64_t offset = id() - 1 - simulation::work_index[mpi::rank];
     simulation::progeny_per_particle[offset] = n_progeny();
   }
-
-  if (settings::pulse_height){score_pulse_height_tally(*this, model::active_pulse_height_tallies);}
+  if (!model::active_pulse_height_tallies.empty() && this->type() == ParticleType::photon){pht_killed_particles();}
+  if (!model::active_pulse_height_tallies.empty()){score_pulse_height_tally(*this, model::active_pulse_height_tallies);}
 }
 
 void Particle::pht_collision_energy()
@@ -430,7 +430,6 @@ void Particle::pht_secondary_particles()
     if (cell_born() == C_NONE)
       cell_born() = coord(n_coord() - 1).cell;
   }
-
   pht_storage()[cell_born()] -= E();
 }
 
@@ -782,4 +781,4 @@ ParticleType str_to_particle_type(std::string str)
   }
 }
 
-} // namespace openm
+} // namespace openmc

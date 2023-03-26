@@ -67,6 +67,7 @@ void Particle::create_secondary(
   // If energy is below cutoff for this particle, don't create secondary
   // particle
   if (E < settings::energy_cutoff[static_cast<int>(type)]) {
+    if (settings::pulse_height && this->type() == ParticleType::photon){pht_killed_particles();}
     return;
   }
   
@@ -288,7 +289,7 @@ void Particle::event_collide()
     }
   }
 
-  if (settings::pulse_height && type() == ParticleType::photon){pht_collision_energy();}
+  if (!model::active_pulse_height_tallies.empty() && type() == ParticleType::photon){pht_collision_energy();}
 
   // Reset banked weight during collision
   n_bank() = 0;
@@ -354,7 +355,7 @@ void Particle::event_revive_from_secondary()
     secondary_bank().pop_back();
     n_event() = 0;
 
-    if (settings::pulse_height && this->type() == ParticleType::photon){pht_secondary_particles();}
+    if (!model::active_pulse_height_tallies.empty() && this->type() == ParticleType::photon){pht_secondary_particles();}
     
     // Enter new particle in particle track file
     if (write_track())
@@ -403,7 +404,7 @@ void Particle::pht_collision_energy()
 {
   // Adds the energy particles lose in a collision to the pulse-height at the cell index
   pht_storage()[coord(n_coord() - 1).cell] += E_last() - E();
-  if ()
+  if (E() < settings::energy_cutoff[1]){pht_storage()[coord(n_coord() - 1).cell] += E();}
 }
 
 void Particle::pht_killed_particles()
@@ -781,4 +782,4 @@ ParticleType str_to_particle_type(std::string str)
   }
 }
 
-} // namespace openmc
+} // namespace openm

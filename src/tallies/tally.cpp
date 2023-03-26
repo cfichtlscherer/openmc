@@ -385,6 +385,8 @@ void Tally::set_filters(gsl::span<Filter*> filters)
       energyout_filter_ = i;
     } else if (dynamic_cast<const DelayedGroupFilter*>(f)) {
       delayedgroup_filter_ = i;
+    } else if (dynamic_cast<const CellFilter*>(f)) {
+      cell_filter_ = i;
     }
   }
 }
@@ -518,7 +520,6 @@ void Tally::set_scores(const vector<std::string>& scores)
         fatal_error("The pulse-height can only be tallied for cell and energy filters");
       }
       type_ = TallyType::PULSE_HEIGHT;
-      settings::pulse_height = true;
       break;
     }
     scores_.push_back(score);
@@ -933,7 +934,6 @@ void setup_active_tallies()
         break;
 
       case TallyType::PULSE_HEIGHT:
-        
         model::active_pulse_height_tallies.push_back(i);
         break;
       }

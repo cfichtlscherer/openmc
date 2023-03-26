@@ -123,6 +123,7 @@ public:
   // present.
   int energyout_filter_ {C_NONE};
   int delayedgroup_filter_ {C_NONE};
+  int cell_filter_ {C_NONE};
 
   vector<Trigger> triggers_;
 
