@@ -2471,10 +2471,6 @@ void score_surface_tally(Particle& p, const vector<int>& tallies)
 
 void score_pulse_height_tally(Particle& p, const vector<int>& tallies){
 
-  print all entries of pht_storage
-  for (int i = 0; i < p.pht_storage().size(); i++){std::cout << "pht_storage[" << i << "] = " << p.pht_storage()[i] << " ";} 
-  std::cout << std::endl;
-  
   for (auto i_tally : tallies) {
   
     auto& tally {*model::tallies[i_tally]};
@@ -2490,16 +2486,21 @@ void score_pulse_height_tally(Particle& p, const vector<int>& tallies){
 
     for (auto cell_id : cells) {
     double score = p.pht_storage()[cell_id];
+    // print all entries of pht_storage
+    //for (int i = 0; i < p.pht_storage().size(); i++){std::cout << "pht_storage[" << i << "] = " << p.pht_storage()[i] << " ";} 
+    //std::cout << std::endl;
+    std::cout << " score " << score << std::endl;
+
     for (; filter_iter != end; ++filter_iter) {
       auto filter_index = filter_iter.index_;
-      auto filter_weight = filter_iter.weight_;
       for (auto score_index = 0; score_index < tally.scores_.size();
            ++score_index) {
+      std::cout << "filter_index = " << filter_index << " score_index " << score_index << std::endl;
       #pragma omp atomic
-        tally.results_(filter_index, score_index, TallyResult::VALUE) += 1;
+          tally.results_(filter_index, score_index, TallyResult::VALUE) += 1;
+          }
+        }
       }
-    }
-    }
     }
   // Reset all the filter matches for the next tally event.
   for (auto& match : p.filter_matches())
