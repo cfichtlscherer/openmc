@@ -2472,47 +2472,89 @@ void score_surface_tally(Particle& p, const vector<int>& tallies)
 void score_pulse_height_tally(Particle& p, const vector<int>& tallies){
   
   // print all entries of pht_storage
-  for (int i = 0; i < p.pht_storage().size(); i++){
-    std::cout << "pht_storage[" << i << "] = " << p.pht_storage()[i] << " ";
-  }
-   std::cout << std::endl;
+  // for (int i = 0; i < p.pht_storage().size(); i++){std::cout << "pht_storage[" << i << "] = " << p.pht_storage()[i] << " ";} 
+  // std::cout << std::endl;
+  
+  for (auto i_tally : tallies) {
+  
+    auto& tally {*model::tallies[i_tally]};
+    auto filter_iter = FilterBinIter(tally, p);
+    auto end = FilterBinIter(tally, true, &p.filter_matches());
+    if (filter_iter == end)
+      continue;
+    // Loop over filter bins.
+    
+    auto i_cell_filt = tally.filters()[tally.cell_filter_];
+    const CellFilter& cell_filt {*dynamic_cast<CellFilter*>(
+        model::tally_filters[i_cell_filt].get())};
+    const auto& cells = cell_filt.cells();
+    for (auto cell_id : cells) {
+    double score = p.pht_storage()[cell_id];
+    for (; filter_iter != end; ++filter_iter) {
+      auto filter_index = filter_iter.index_;
+      auto filter_weight = filter_iter.weight_;
 
+      // Loop over scores.
+      for (auto score_index = 0; score_index < tally.scores_.size();
+           ++score_index) {
+      #pragma omp atomic
+        tally.results_(filter_index, score_index, TallyResult::VALUE) += 1;
+      }
+    }
+    }
+    }
   for (auto i_tally : tallies) {
     // define the tally in the loop
     auto& tally {*model::tallies[i_tally]};
     // Get the index of the cell filter 
     auto i_cell_filt = tally.filters()[tally.cell_filter_];
-    //std::cout << "index of the cell filter = " << i_cell_filt << std::endl;
-    // Get the number of cells in the cell filter
-    //std::cout << "number of cells in the cell filter = " << model::tally_filters[i_cell_filt]->n_bins() << std::endl;
+    std::cout << "index of the cell filter = " << i_cell_filt << std::endl;
+    std::cout << "number of cells in the cell filter = " << model::tally_filters[i_cell_filt]->n_bins() << std::endl;
+    // Get the index of the cells in the cell filter    
+    const CellFilter& cell_filt {*dynamic_cast<CellFilter*>(
+          model::tally_filters[i_cell_filt].get())};
+    const auto& cells = cell_filt.cells();
+    //std::cout << "all cells in cell filter "<< cell_filt.cells << std::endl;
+    for (auto cell_id : cells) {
+        std::cout << cell_id << " ";
+        }
+    std::cout << std::endl;
+
+    // I believe this is wrong, cause we only want to store the value for different cells seperately
+    double score = 0.0;
+    for (int cell_index : cells) {score += p.pht_storage()[cell_index];}
+
+    //for (auto c_bin = 0; c_bin < cell_filt.n_bins(); ++c_bin) {
+    //      std::cout << "Cell" << cell_filt.cells_[c_bin] << std::endl; }
+  }
     // Get the index of the cells in the cell filter
-     for (auto filter_idx : tally.filters()) {
-    
-    auto filter_iter = FilterBinIter(tally, p);
-    auto end = FilterBinIter(tally, true, &p.filter_matches());
-    if (filter_iter == end)
-      continue;
-    
-    // Loop over filter bins.
-    for (; filter_iter != end; ++filter_iter) {
-      std::cout << "filter_iter.index_ = " << filter_iter.index_ << std::endl;
-      auto filter_index = filter_iter.index_;
-      auto filter_weight = filter_iter.weight_;
-
-      // Loop over scores.
-      // There is only one score type for current tallies so there is no need
-      // for a further scoring function.
-      int cell_index = 0;
-      double score = p.pht_storage()[cell_index];
-      for (auto score_index = 0; score_index < tally.scores_.size();
-           ++score_index) {
-        #pragma omp atomic
-        tally.results_(filter_index+1, cell_index, TallyResult::VALUE) += 1;
-      }
-
-      }
-    }
-    }
+  //   for (auto filter_idx : tally.filters()) {
+  //  
+  //  auto filter_iter = FilterBinIter(tally, p);
+  //  auto end = FilterBinIter(tally, true, &p.filter_matches());
+  //  if (filter_iter == end)
+  //    continue;
+  //  
+  //  // Loop over filter bins.
+  //  for (; filter_iter != end; ++filter_iter) {
+  //    std::cout << "filter_iter.index_ = " << filter_iter.index_ << std::endl;
+  //    auto filter_index = filter_iter.index_;
+  //    auto filter_weight = filter_iter.weight_;
+//
+  //    // Loop over scores.
+  //    // There is only one score type for current tallies so there is no need
+  //    // for a further scoring function.
+  //    int cell_index = 0;
+  //    double score = p.pht_storage()[cell_index];
+  //    for (auto score_index = 0; score_index < tally.scores_.size();
+  //         ++score_index) {
+  //      #pragma omp atomic
+  //      tally.results_(filter_index+1, cell_index, TallyResult::VALUE) += 1;
+  //    }
+//
+  //    }
+  //  }
+  //  }
   // Reset all the filter matches for the next tally event.
   for (auto& match : p.filter_matches())
     match.bins_present_ = false;
