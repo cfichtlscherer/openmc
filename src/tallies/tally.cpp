@@ -387,7 +387,10 @@ void Tally::set_filters(gsl::span<Filter*> filters)
       delayedgroup_filter_ = i;
     } else if (dynamic_cast<const CellFilter*>(f)) {
       cell_filter_ = i;
+    } else if (dynamic_cast<const EnergyFilter*>(f)) {
+      energy_filter_ = i;
     }
+
   }
 }
 
@@ -425,6 +428,7 @@ void Tally::set_scores(const vector<std::string>& scores)
   bool energyout_present = energyout_filter_ != C_NONE;
   bool legendre_present = false;
   bool cell_present = false;
+  bool energy_present = false;
   bool cellfrom_present = false;
   bool surface_present = false;
   bool meshsurface_present = false;
@@ -440,6 +444,8 @@ void Tally::set_scores(const vector<std::string>& scores)
       cellfrom_present = true;
     } else if (dynamic_cast<const CellFilter*>(filt)) {
       cell_present = true;
+    } else if (dynamic_cast<const EnergyFilter*>(filt)) {
+      energy_present = true;
     } else if (dynamic_cast<const SurfaceFilter*>(filt)) {
       surface_present = true;
     } else if (dynamic_cast<const MeshSurfaceFilter*>(filt)) {
