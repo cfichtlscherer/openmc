@@ -2498,9 +2498,11 @@ void score_pulse_height_tally(Particle& p, const vector<int>& tallies){
       *dynamic_cast<CellFilter*>(model::tally_filters[i_cell_filt].get())};
 
     const auto& cells = cell_filt.cells();
-
+    
+    int counter = 0;
     for (auto cell_id : cells) {
-      p.filter_matches(i_cell_filt).bins_[i_cell_bin] = cells[cell_id];
+
+      p.filter_matches(i_cell_filt).bins_[i_cell_bin] = counter; 
       double score = p.pht_storage()[cell_id];
       if (score < energy_filt.bins().front() || score > energy_filt.bins().back()) {
         continue;
@@ -2523,13 +2525,13 @@ void score_pulse_height_tally(Particle& p, const vector<int>& tallies){
 
     #pragma omp atomic
       tally.results_(filter_index, 0, TallyResult::VALUE) += filter_weight;
+      counter++;
     }
     }
     // Reset all the filter matches for the next tally event.
     for (auto& match : p.filter_matches())
       match.bins_present_ = false;
-    
-      }
+    }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////
