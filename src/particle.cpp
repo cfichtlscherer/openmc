@@ -67,7 +67,6 @@ void Particle::create_secondary(
   // If energy is below cutoff for this particle, don't create secondary
   // particle
   if (E < settings::energy_cutoff[static_cast<int>(type)]) {
-    //if (!model::active_pulse_height_tallies.empty() && this->type() == ParticleType::photon){pht_killed_particles();}
     return;
   }
   
@@ -288,7 +287,6 @@ void Particle::event_collide()
       score_analog_tally_mg(*this);
     }
   }
-
   if (!model::active_pulse_height_tallies.empty() && type() == ParticleType::photon){pht_collision_energy();}
 
   // Reset banked weight during collision
@@ -354,7 +352,7 @@ void Particle::event_revive_from_secondary()
     from_source(&secondary_bank().back());
     secondary_bank().pop_back();
     n_event() = 0;
-
+  
     if (!model::active_pulse_height_tallies.empty() && this->type() == ParticleType::photon){pht_secondary_particles();}
     
     // Enter new particle in particle track file
@@ -396,6 +394,7 @@ void Particle::event_death()
     int64_t offset = id() - 1 - simulation::work_index[mpi::rank];
     simulation::progeny_per_particle[offset] = n_progeny();
   }
+  
   if (!model::active_pulse_height_tallies.empty() && this->type() == ParticleType::photon){pht_killed_particles();}
   if (!model::active_pulse_height_tallies.empty()){score_pulse_height_tally(*this, model::active_pulse_height_tallies);}
 }
@@ -404,7 +403,11 @@ void Particle::pht_collision_energy()
 {
   // Adds the energy particles lose in a collision to the pulse-height at the cell index
   pht_storage()[coord(n_coord() - 1).cell] += E_last() - E();
-  if (E() < settings::energy_cutoff[1]){pht_storage()[coord(n_coord() - 1).cell] += E();}
+  //if (id() == 445846 || id() == 838077 || id() == 909950 || id() == 45532 || id() == 116265) {
+  //  std::cout << "Particle " << id() << " had energy " << E_last() << " did a collision Energy after colision " << E() << " in " << coord(n_coord() - 1).cell << std::endl;
+  //  std::cout << "pht value: " << pht_storage()[coord(n_coord() - 1).cell] << std::endl;
+  //}
+  //if (E() < settings::energy_cutoff[1]){pht_storage()[coord(n_coord() - 1).cell] += E();}
 }
 
 void Particle::pht_killed_particles()
@@ -412,6 +415,10 @@ void Particle::pht_killed_particles()
   // If the energy of the particle is below the cutoff, it will not be sampled
   // Its energy is added to the pulse-height
   pht_storage()[coord(n_coord() - 1).cell] += E();
+  //if (id() == 445846 || id() == 838077 || id() == 909950 || id() == 45532 || id() == 116265) {
+  //  std::cout << "Particle " << id() << " has energy " << E() << " and is being killed in " << coord(n_coord() - 1).cell << std::endl;
+  //  std::cout << "pht value: " << pht_storage()[coord(n_coord() - 1).cell] << std::endl;
+  //}
 }
 
 void Particle::pht_secondary_particles()
@@ -419,18 +426,23 @@ void Particle::pht_secondary_particles()
   // Removes the energy of secondary produced particles from the pulse-height
   // To avoid double-counting
 
-  // determine the birth cell of the particle
-  if (coord(n_coord() - 1).cell == C_NONE) {
-    if (!exhaustive_find_cell(*this)) {
-      mark_as_lost(
-        "Could not find the cell containing particle " + std::to_string(id()));
-      return;}
+   // determine the birth cell of the particle
+   if (coord(n_coord() - 1).cell == C_NONE) {
+     if (!exhaustive_find_cell(*this)) {
+       mark_as_lost(
+         "Could not find the cell containing particle " + std::to_string(id()));
+       return;}
+  
+     // Set birth cell attribute
+     if (cell_born() == C_NONE)
+       cell_born() = coord(n_coord() - 1).cell;
+   }
+   pht_storage()[cell_born()] -= E();
+  //if (id() == 445846 || id() == 838077 || id() == 909950 || id() == 45532 || id() == 116265) {
+  //  std::cout << "Secondary Particle " << id() << " has energy " << E() << " was started in " << cell_born() << std::endl;
+  //  std::cout << "pht value: " << pht_storage()[cell_born()] << std::endl;
+  //}
 
-    // Set birth cell attribute
-    if (cell_born() == C_NONE)
-      cell_born() = coord(n_coord() - 1).cell;
-  }
-  pht_storage()[cell_born()] -= E();
 }
 
 void Particle::cross_surface()

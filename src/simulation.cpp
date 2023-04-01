@@ -112,6 +112,7 @@ int openmc_simulation_init()
   simulation::current_batch = 0;
   simulation::k_generation.clear();
   simulation::entropy.clear();
+
   openmc_reset();
 
   // If this is a restart run, load the state point data and binary source

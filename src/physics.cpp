@@ -298,6 +298,8 @@ void sample_photon_reaction(Particle& p)
   // Coherent (Rayleigh) scattering
   prob += micro.coherent;
   if (prob > cutoff) {
+//if (p.id() == 445846 || p.id() == 838077 || p.id() == 909950 || p.id() == 45532 || p.id() == 116265) {
+//    std::cout << "Particle " << p.id() << " has energy " << p.E() << " was started in " << p.cell_born() << " performed reighleigh scattering."<< std::endl;}
     double mu = element.rayleigh_scatter(alpha, p.current_seed());
     p.u() = rotate_angle(p.u(), mu, nullptr, p.current_seed());
     p.event() = TallyEvent::SCATTER;
@@ -308,6 +310,8 @@ void sample_photon_reaction(Particle& p)
   // Incoherent (Compton) scattering
   prob += micro.incoherent;
   if (prob > cutoff) {
+ //if (p.id() == 445846 || p.id() == 838077 || p.id() == 909950 || p.id() == 45532 || p.id() == 116265) {
+ //   std::cout << "Particle " << p.id() << " has energy " << p.E() << " was started in " << p.cell_born() << " performed compton scattering." << std::endl;}
     double alpha_out, mu;
     int i_shell;
     element.compton_scatter(
@@ -332,17 +336,25 @@ void sample_photon_reaction(Particle& p)
                                      2.0 * alpha * alpha_out * mu);
       Direction u = rotate_angle(p.u(), mu_electron, &phi, p.current_seed());
       p.create_secondary(p.wgt(), u, E_electron, ParticleType::electron);
+    //  if (p.id() == 445846 || p.id() == 838077 || p.id() == 909950 || p.id() == 45532 || p.id() == 116265) {
+    //std::cout << "In creation of compton electron Particle: id " << p.id() << " has energy " << p.E() << " was started in " << p.cell_born() << std::endl;
+    //  }
     }
 
     // TODO: Compton subshell data does not match atomic relaxation data
     // Allow electrons to fill orbital and produce auger electrons
     // and fluorescent photons
+    // 
+    //if (model::active_pulse_height_tallies.empty() && i_shell >= 0) {
     if (i_shell >= 0) {
       element.atomic_relaxation(i_shell, p);
     }
-
+    
     phi += PI;
     p.E() = alpha_out * MASS_ELECTRON_EV;
+    //if (p.id() == 445846 || p.id() == 838077 || p.id() == 909950 || p.id() == 45532 || p.id() == 116265) {
+    //  std::cout << "Energy of photon after compton scattering " << p.E() << std::endl;
+    //  std::cout << "Particle in secondary bank: " << p.secondary_bank().size() << std::endl;}
     p.u() = rotate_angle(p.u(), mu, &phi, p.current_seed());
     p.event() = TallyEvent::SCATTER;
     p.event_mt() = INCOHERENT;
@@ -353,6 +365,8 @@ void sample_photon_reaction(Particle& p)
   double prob_after = prob + micro.photoelectric;
 
   if (prob_after > cutoff) {
+    //if (p.id() == 445846 || p.id() == 838077 || p.id() == 909950 || p.id() == 45532 || p.id() == 116265) {
+    //std::cout << "Particle " << p.id() << " has energy " << p.E() << " was started in " << p.cell_born() << " performed photoelectric absorption."<< std::endl;}
     // Get grid index, interpolation factor, and bounding subshell
     // cross sections
     int i_grid = micro.index_grid;

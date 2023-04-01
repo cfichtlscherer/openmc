@@ -41,9 +41,12 @@ FilterBinIter::FilterBinIter(const Tally& tally, Particle& p)
       match.bins_present_ = true;
     }
 
+    //std::cout << "Match bins size: " << p.id() << "  " << match.bins_.size() << std::endl;
+
     // If there are no valid bins for this filter, then there are no valid
     // filter bin combinations so all iterators are end iterators.
     if (match.bins_.size() == 0) {
+      //std::cout << "No valid bins for filter " << std::endl;
       index_ = -1;
       return;
     }
@@ -2472,16 +2475,18 @@ void score_surface_tally(Particle& p, const vector<int>& tallies)
 void score_pulse_height_tally(Particle& p, const vector<int>& tallies){
 
   for (auto i_tally : tallies) {
-  
+    //std::cout << "score_pulse_height_tally" << std::endl;
     auto& tally {*model::tallies[i_tally]};
+
+    //for (int i=0; i < p.pht_storage().size(); i++){
+    //  std::cout << "[" << i << "] = " << p.pht_storage()[i] << " ";
+    //}
+    //std::cout << std::endl;
 
     // Initialize an iterator over valid filter bin combinations.  If there are
     // no valid combinations, use a continue statement to ensure we skip the
     // assume_separate break below.
     auto filter_iter = FilterBinIter(tally, p);
-    auto end = FilterBinIter(tally, true, &p.filter_matches());
-    if (filter_iter == end)
-      continue;
 
     auto i_energy_filt = tally.filters()[tally.energy_filter_];
     auto i_energy_bin = p.filter_matches(i_energy_filt).i_bin_;
@@ -2498,12 +2503,14 @@ void score_pulse_height_tally(Particle& p, const vector<int>& tallies){
       *dynamic_cast<CellFilter*>(model::tally_filters[i_cell_filt].get())};
 
     const auto& cells = cell_filt.cells();
-    
+    //std::cout << "cells.size() = " << cells.size() << std::endl;
     int counter = 0;
     for (auto cell_id : cells) {
-
       p.filter_matches(i_cell_filt).bins_[i_cell_bin] = counter; 
       double score = p.pht_storage()[cell_id];
+      
+      //std::cout << "score: " << score << " id: " << p.id() << std::endl;
+
       if (score < energy_filt.bins().front() || score > energy_filt.bins().back()) {
         continue;
       } else {
@@ -2522,7 +2529,6 @@ void score_pulse_height_tally(Particle& p, const vector<int>& tallies){
         filter_index += match.bins_[i_bin] * tally.strides(j);
         filter_weight *= match.weights_[i_bin];
       }
-
     #pragma omp atomic
       tally.results_(filter_index, 0, TallyResult::VALUE) += filter_weight;
       counter++;
