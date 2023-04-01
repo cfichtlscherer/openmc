@@ -394,9 +394,14 @@ void Particle::event_death()
     int64_t offset = id() - 1 - simulation::work_index[mpi::rank];
     simulation::progeny_per_particle[offset] = n_progeny();
   }
-  
-  if (!model::active_pulse_height_tallies.empty() && this->type() == ParticleType::photon){pht_killed_particles();}
-  if (!model::active_pulse_height_tallies.empty()){score_pulse_height_tally(*this, model::active_pulse_height_tallies);}
+    
+if (!model::active_pulse_height_tallies.empty()){
+    if (this->type() == ParticleType::photon){
+        pht_killed_particles();
+    }
+    score_pulse_height_tally(*this, model::active_pulse_height_tallies);
+}
+
 }
 
 void Particle::pht_collision_energy()
