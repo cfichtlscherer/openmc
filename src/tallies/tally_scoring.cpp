@@ -2508,7 +2508,6 @@ void score_pulse_height_tally(Particle& p, const vector<int>& tallies){
     for (auto cell_id : cells) {
       p.filter_matches(i_cell_filt).bins_[i_cell_bin] = counter; 
       double score = p.pht_storage()[cell_id];
-      
       //std::cout << "score: " << score << " id: " << p.id() << std::endl;
 
       if (score < energy_filt.bins().front() || score > energy_filt.bins().back()) {
