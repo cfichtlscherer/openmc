@@ -208,21 +208,26 @@ void create_fission_sites(Particle& p, int i_nuclide, const Reaction& rx)
       double fission_prob = p.neutron_xs(i_nuclide).fission /
                             p.neutron_xs(i_nuclide).total;
       if (prn(p.current_seed()) < fission_prob) {
-        // This collision IS a fission — call FREYA for physical P(nu)
+        // This collision IS a fission — call FREYA for physical P(nu).
+        // FREYA uses static internal state and is not thread-safe, so
+        // serialize access with an OpenMP critical section.
         int za = nuc->Z_ * 1000 + nuc->A_;
         double E_incident = p.E() * 1.0e-6; // eV -> MeV
         double nubar = nuc->nu(p.E(), Nuclide::EmissionMode::total);
         double time = p.time();
-        genfissevt_(&za, &time, &nubar, &E_incident);
+        #pragma omp critical(freya)
+        {
+          genfissevt_(&za, &time, &nubar, &E_incident);
 
-        nu = getnnu_();
+          nu = getnnu_();
 
-        for (int i = 0; i < nu && i < 20; i++) {
-          int idx = i;
-          freya_energies[i] = getneng_(&idx) * 1.0e6; // MeV -> eV
-          freya_u[i] = getndircosu_(&idx);
-          freya_v[i] = getndircosv_(&idx);
-          freya_w[i] = getndircosw_(&idx);
+          for (int i = 0; i < nu && i < 20; i++) {
+            int idx = i;
+            freya_energies[i] = getneng_(&idx) * 1.0e6; // MeV -> eV
+            freya_u[i] = getndircosu_(&idx);
+            freya_v[i] = getndircosv_(&idx);
+            freya_w[i] = getndircosw_(&idx);
+          }
         }
         freya_used = true;
       } else {
