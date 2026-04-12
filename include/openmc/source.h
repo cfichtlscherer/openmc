@@ -290,6 +290,9 @@ public:
   //! \return Vector of sampled sites sharing the same position and time
   vector<SourceSite> sample_sites(uint64_t* seed) const override;
 
+  //! Get the time distribution
+  Distribution* time() const { return time_.get(); }
+
 private:
   UPtrSpace space_; //!< Shared spatial distribution
   UPtrDist time_;   //!< Shared time distribution

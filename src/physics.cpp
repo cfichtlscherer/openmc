@@ -1,6 +1,9 @@
 #include "openmc/physics.h"
 
 #include "openmc/bank.h"
+#ifdef OPENMC_USE_FREYA
+#include "Fission.h"
+#endif
 #include "openmc/bremsstrahlung.h"
 #include "openmc/chain.h"
 #include "openmc/constants.h"
@@ -176,15 +179,68 @@ void create_fission_sites(Particle& p, int i_nuclide, const Reaction& rx)
   // the expected number of fission sites produced
   double weight = settings::ufs_on ? ufs_get_weight(p) : 1.0;
 
-  // Determine the expected number of neutrons produced
-  double nu_t = p.wgt() / simulation::keff * weight *
-                p.neutron_xs(i_nuclide).nu_fission /
-                p.neutron_xs(i_nuclide).total;
+  int nu;
 
-  // Sample the number of neutrons produced
-  int nu = static_cast<int>(nu_t);
-  if (prn(p.current_seed()) <= (nu_t - nu))
-    ++nu;
+#ifdef OPENMC_USE_FREYA
+  // Arrays to store FREYA neutron data (max 20 neutrons per fission)
+  double freya_energies[20];
+  double freya_u[20], freya_v[20], freya_w[20];
+  bool freya_used = false;
+
+  if (settings::use_freya) {
+    const auto& nuc {data::nuclides[i_nuclide]};
+
+    if (settings::run_mode == RunMode::EIGENVALUE) {
+      // In eigenvalue mode, use standard weighted nu (not FREYA) to maintain
+      // criticality balance. FREYA is only used for fixed-source NMC.
+      double nu_weighted = p.wgt() / simulation::keff * weight *
+                    p.neutron_xs(i_nuclide).nu_fission /
+                    p.neutron_xs(i_nuclide).total;
+      nu = static_cast<int>(nu_weighted);
+      if (prn(p.current_seed()) <= (nu_weighted - nu))
+        ++nu;
+      freya_used = false;
+    } else {
+      // Fixed-source mode: this function is called at EVERY collision in
+      // fissile material, not just fission reactions. We must first sample
+      // whether this collision is actually a fission. The probability is
+      // sigma_fission / sigma_total.
+      double fission_prob = p.neutron_xs(i_nuclide).fission /
+                            p.neutron_xs(i_nuclide).total;
+      if (prn(p.current_seed()) < fission_prob) {
+        // This collision IS a fission — call FREYA for physical P(nu)
+        int za = nuc->Z_ * 1000 + nuc->A_;
+        double E_incident = p.E() * 1.0e-6; // eV -> MeV
+        double nubar = nuc->nu(p.E(), Nuclide::EmissionMode::total);
+        double time = p.time();
+        genfissevt_(&za, &time, &nubar, &E_incident);
+
+        nu = getnnu_();
+
+        for (int i = 0; i < nu && i < 20; i++) {
+          int idx = i;
+          freya_energies[i] = getneng_(&idx) * 1.0e6; // MeV -> eV
+          freya_u[i] = getndircosu_(&idx);
+          freya_v[i] = getndircosv_(&idx);
+          freya_w[i] = getndircosw_(&idx);
+        }
+        freya_used = true;
+      } else {
+        // Not a fission — no secondary neutrons
+        nu = 0;
+      }
+    }
+  } else
+#endif
+  {
+    // Standard OpenMC fission sampling (floor/ceil of nu-bar)
+    double nu_t = p.wgt() / simulation::keff * weight *
+                  p.neutron_xs(i_nuclide).nu_fission /
+                  p.neutron_xs(i_nuclide).total;
+    nu = static_cast<int>(nu_t);
+    if (prn(p.current_seed()) <= (nu_t - nu))
+      ++nu;
+  }
 
   // If no neutrons were produced then don't continue
   if (nu == 0)
@@ -216,8 +272,19 @@ void create_fission_sites(Particle& p, int i_nuclide, const Reaction& rx)
     site.wgt = 1. / weight;
     site.surf_id = 0;
 
-    // Sample delayed group and angle/energy for fission reaction
-    sample_fission_neutron(i_nuclide, rx, &site, p);
+#ifdef OPENMC_USE_FREYA
+    if (freya_used && n_sites_stored < 20) {
+      // Use FREYA-sampled energy and direction
+      site.E = freya_energies[n_sites_stored];
+      site.u = {freya_u[n_sites_stored], freya_v[n_sites_stored],
+                freya_w[n_sites_stored]};
+      site.delayed_group = 0; // FREYA only produces prompt neutrons by default
+    } else
+#endif
+    {
+      // Sample delayed group and angle/energy for fission reaction
+      sample_fission_neutron(i_nuclide, rx, &site, p);
+    }
 
     // Reject site if it exceeds time cutoff
     if (site.delayed_group > 0) {

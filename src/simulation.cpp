@@ -1,6 +1,9 @@
 #include "openmc/simulation.h"
 
 #include "openmc/bank.h"
+#ifdef OPENMC_USE_FREYA
+#include "Fission.h"
+#endif
 #include "openmc/capi.h"
 #include "openmc/collision_track.h"
 #include "openmc/container_util.h"
@@ -86,6 +89,24 @@ int openmc_simulation_init()
   if (settings::run_CE) {
     initialize_data();
   }
+
+#ifdef OPENMC_USE_FREYA
+  // Initialize FREYA fission library if enabled
+  if (settings::use_freya) {
+    if (!settings::freya_data_path.empty()) {
+      // setfreyadatapath_ expects a null-terminated char*
+      std::string path = settings::freya_data_path;
+      setfreyadatapath_(const_cast<char*>(path.c_str()));
+    }
+    // Use full FREYA mode (correlation option 3)
+    int corr = 3;
+    setcorrel_(&corr);
+    // Use Zucker & Holden P(nu) tables (nudist 3)
+    int nudist = 3;
+    setnudist_(&nudist);
+    write_message("FREYA fission library initialized.", 5);
+  }
+#endif
 
   // Determine how much work each process should do
   calculate_work();
@@ -367,10 +388,20 @@ void compute_decay_times()
   vector<double> mean_dts(n_sources, 0.0);
   bool any_poisson = false;
   for (int s = 0; s < n_sources; ++s) {
+    const Distribution* time_dist = nullptr;
     auto* indep =
       dynamic_cast<IndependentSource*>(model::external_sources[s].get());
     if (indep) {
-      auto* poisson = dynamic_cast<const PoissonProcess*>(indep->time());
+      time_dist = indep->time();
+    } else {
+      auto* coinc =
+        dynamic_cast<CoincidentSource*>(model::external_sources[s].get());
+      if (coinc) {
+        time_dist = coinc->time();
+      }
+    }
+    if (time_dist) {
+      auto* poisson = dynamic_cast<const PoissonProcess*>(time_dist);
       if (poisson) {
         double rate = poisson->rate();
         mean_dts[s] = (rate > 0.0) ? 1.0 / rate : 0.0;

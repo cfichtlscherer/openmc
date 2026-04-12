@@ -37,6 +37,7 @@ option(OPENMC_USE_DAGMC       "Enable support for DAGMC (CAD) geometry"         
 option(OPENMC_USE_LIBMESH     "Enable support for libMesh unstructured mesh tallies" OFF)
 option(OPENMC_USE_MPI         "Enable MPI"                                           OFF)
 option(OPENMC_USE_UWUW        "Enable UWUW"                                          OFF)
+option(OPENMC_USE_FREYA       "Enable FREYA fission library for multiplicity counting" OFF)
 option(OPENMC_FORCE_VENDORED_LIBS "Explicitly use submodules defined in 'vendor'"    OFF)
 
 message(STATUS "OPENMC_USE_OPENMP ${OPENMC_USE_OPENMP}")
@@ -533,6 +534,17 @@ endif()
 
 if (OPENMC_USE_MPI)
   target_link_libraries(libopenmc MPI::MPI_CXX)
+endif()
+
+if (OPENMC_USE_FREYA)
+  target_compile_definitions(libopenmc PUBLIC OPENMC_USE_FREYA)
+  target_compile_definitions(libopenmc PUBLIC FREYA)
+  if (DEFINED FREYA_DIR)
+    target_include_directories(libopenmc PRIVATE ${FREYA_DIR}/include)
+    target_link_directories(libopenmc PRIVATE ${FREYA_DIR}/lib)
+  endif()
+  target_link_libraries(libopenmc Fission)
+  message(STATUS "FREYA fission library enabled")
 endif()
 
 if (OPENMC_BUILD_TESTS)

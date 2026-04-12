@@ -85,6 +85,8 @@ bool use_decay_photons {false};
 bool weight_windows_on {false};
 bool weight_window_checkpoint_surface {false};
 bool weight_window_checkpoint_collision {true};
+bool use_freya {false};
+std::string freya_data_path;
 bool write_all_tracks {false};
 bool write_initial_source {false};
 
@@ -664,6 +666,14 @@ void read_settings_xml(pugi::xml_node root)
   // Check if we want to write out source
   if (check_for_node(root, "write_initial_source")) {
     write_initial_source = get_node_value_bool(root, "write_initial_source");
+  }
+
+  // FREYA fission library settings
+  if (check_for_node(root, "use_freya")) {
+    use_freya = get_node_value_bool(root, "use_freya");
+  }
+  if (check_for_node(root, "freya_data_path")) {
+    freya_data_path = get_node_value(root, "freya_data_path");
   }
 
   // Get relative number of lost particles

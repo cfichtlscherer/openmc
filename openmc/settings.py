@@ -452,6 +452,8 @@ class Settings:
         self._max_particles_in_flight = None
         self._max_particle_events = None
         self._write_initial_source = None
+        self._use_freya = None
+        self._freya_data_path = None
         self._weight_windows = WeightWindowsList()
         self._weight_window_generators = cv.CheckedList(
             WeightWindowGenerator, 'weight window generators')
@@ -1220,6 +1222,24 @@ class Settings:
         self._write_initial_source = value
 
     @property
+    def use_freya(self) -> bool:
+        return self._use_freya
+
+    @use_freya.setter
+    def use_freya(self, value: bool):
+        cv.check_type('use freya', value, bool)
+        self._use_freya = value
+
+    @property
+    def freya_data_path(self) -> str:
+        return self._freya_data_path
+
+    @freya_data_path.setter
+    def freya_data_path(self, value: str):
+        cv.check_type('freya data path', value, str)
+        self._freya_data_path = value
+
+    @property
     def weight_windows(self) -> WeightWindowsList:
         return self._weight_windows
 
@@ -1805,6 +1825,14 @@ class Settings:
             elem = ET.SubElement(root, "write_initial_source")
             elem.text = str(self._write_initial_source).lower()
 
+    def _create_use_freya_subelement(self, root):
+        if self._use_freya is not None:
+            elem = ET.SubElement(root, "use_freya")
+            elem.text = str(self._use_freya).lower()
+        if self._freya_data_path is not None:
+            elem = ET.SubElement(root, "freya_data_path")
+            elem.text = self._freya_data_path
+
     def _create_weight_windows_subelement(self, root, mesh_memo=None):
         for ww in self._weight_windows:
             # Add weight window information
@@ -2285,6 +2313,14 @@ class Settings:
         if text is not None:
             self.write_initial_source = text in ('true', '1')
 
+    def _use_freya_from_xml_element(self, root):
+        text = get_text(root, 'use_freya')
+        if text is not None:
+            self.use_freya = text in ('true', '1')
+        text = get_text(root, 'freya_data_path')
+        if text is not None:
+            self.freya_data_path = text
+
     def _weight_window_generators_from_xml_element(self, root, meshes=None):
         for elem in root.iter('weight_windows_generator'):
             wwg = WeightWindowGenerator.from_xml_element(elem, meshes)
@@ -2454,6 +2490,7 @@ class Settings:
         self._create_material_cell_offsets_subelement(element)
         self._create_log_grid_bins_subelement(element)
         self._create_write_initial_source_subelement(element)
+        self._create_use_freya_subelement(element)
         self._create_weight_windows_subelement(element, mesh_memo)
         self._create_weight_windows_on_subelement(element)
         self._create_weight_window_generators_subelement(element, mesh_memo)
@@ -2567,6 +2604,7 @@ class Settings:
         settings._material_cell_offsets_from_xml_element(elem)
         settings._log_grid_bins_from_xml_element(elem)
         settings._write_initial_source_from_xml_element(elem)
+        settings._use_freya_from_xml_element(elem)
         settings._weight_windows_from_xml_element(elem, meshes)
         settings._weight_windows_on_from_xml_element(elem)
         settings._weight_windows_file_from_xml_element(elem)
