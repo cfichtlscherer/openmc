@@ -4,6 +4,7 @@
 #ifndef OPENMC_SOURCE_H
 #define OPENMC_SOURCE_H
 
+#include <atomic>
 #include <limits>
 #include <unordered_set>
 
@@ -191,6 +192,14 @@ protected:
 
 private:
   vector<SourceSite> sites_; //!< Source sites
+  // Atomic counter for sequential (no-replacement) sampling mode.
+  // Activated by env var OPENMC_FILESOURCE_SEQUENTIAL=1. When enabled, each
+  // call to sample() returns the next site in order (mod sites_.size()),
+  // so each source particle is transported exactly once when
+  // settings::n_particles == sites_.size(). Required for time-correlated
+  // measurements (NMC) where double-sampling the same source particle
+  // creates spurious correlated pair counts.
+  mutable std::atomic<size_t> next_idx_{0};
 };
 
 //==============================================================================

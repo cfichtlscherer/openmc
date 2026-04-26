@@ -4,6 +4,7 @@
 #define HAS_DYNAMIC_LINKING
 #endif
 
+#include <cstdlib> // for getenv
 #include <utility> // for move
 
 #ifdef HAS_DYNAMIC_LINKING
@@ -531,8 +532,24 @@ void FileSource::load_sites_from_file(const std::string& path)
 
 SourceSite FileSource::sample(uint64_t* seed) const
 {
-  // Sample a particle randomly from list
-  size_t i_site = sites_.size() * prn(seed);
+  // Optional sequential (no-replacement) mode: when env var
+  // OPENMC_FILESOURCE_SEQUENTIAL=1 is set, return sites in order. This
+  // ensures each source particle in the file is transported exactly once
+  // when settings::n_particles == sites_.size(), avoiding the spurious
+  // correlated pairs that arise from double-sampling in time-correlated
+  // measurements (e.g. neutron multiplicity counting).
+  static const bool sequential = []() {
+    const char* env = std::getenv("OPENMC_FILESOURCE_SEQUENTIAL");
+    return env != nullptr && env[0] != '\0' && env[0] != '0';
+  }();
+
+  size_t i_site;
+  if (sequential) {
+    i_site = next_idx_.fetch_add(1) % sites_.size();
+  } else {
+    // Default: sample a particle randomly from list (with replacement)
+    i_site = sites_.size() * prn(seed);
+  }
   return sites_[i_site];
 }
 
