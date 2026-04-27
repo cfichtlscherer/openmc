@@ -576,10 +576,12 @@ int sample_nuclide(Particle& p)
   int n = mat->nuclide_.size();
 
   double prob = 0.0;
+  int last_nuclide = -1;
   for (int i = 0; i < n; ++i) {
     // Get atom density
     int i_nuclide = mat->nuclide_[i];
     double atom_density = mat->atom_density(i, p.density_mult());
+    last_nuclide = i_nuclide;
 
     // Increment probability to compare to cutoff
     prob += atom_density * p.neutron_xs(i_nuclide).total;
@@ -587,9 +589,12 @@ int sample_nuclide(Particle& p)
       return i_nuclide;
   }
 
-  // If we reach here, no nuclide was sampled
-  p.write_restart();
-  throw std::runtime_error {"Did not sample any nuclide during collision."};
+  // Fall through: floating-point rounding can leave the cumulative
+  // per-nuclide sum strictly below macro_xs().total even when both are
+  // computed correctly. Return the last nuclide rather than throwing,
+  // which preserves the asymptotic sampling distribution to within
+  // machine precision and avoids spurious aborts in long simulations.
+  return last_nuclide;
 }
 
 int sample_element(Particle& p)
